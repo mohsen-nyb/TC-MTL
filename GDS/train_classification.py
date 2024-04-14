@@ -134,7 +134,7 @@ class Model_trainer:
                                   collate_fn=visit_collate_fn, num_workers=self.params['threads'])
         self.test_loader = DataLoader(dataset=test_set, batch_size=self.params['batch_size'], shuffle=False,
                                  collate_fn=visit_collate_fn, num_workers=self.params['threads'])
-        #self.att_loader = DataLoader(dataset=att_set, batch_size=1, shuffle=False,collate_fn=visit_collate_fn, num_workers=self.params['threads'])
+
 
     def train(self, train_p, train_seqs, train_labels, test_p, test_seqs, test_labels):
         if self.params['threads'] == -1:
@@ -222,24 +222,11 @@ class Model_trainer:
             precision = precision_score(train_y_true, predictions_train, average='macro', zero_division=0)
             f1 = f1_score(train_y_true, predictions_train, average='macro')
 
-            #roc_auc_macro = roc_auc_score(train_y_true, probabilities_train, multi_class='ovr', average='weighted')
-            #recall_macro = recall_score(train_y_true, predictions_train, average='weighted')
-            #precision_macro = precision_score(train_y_true, predictions_train, average='weighted', zero_division=0)
-            #f1_macro = f1_score(train_y_true, predictions_train, average='weighted')
-
-
-
             accuracy_valid = accuracy_score(valid_y_true, predictions_test)
             roc_auc_valid = roc_auc_score(valid_y_true, probabilities_test, multi_class='ovr', average='macro')
             recall_valid = recall_score(valid_y_true, predictions_test, average='macro')
             precision_valid = precision_score(valid_y_true, predictions_test, average='macro', zero_division=0)
             f1_valid = f1_score(valid_y_true, predictions_test, average='macro')
-
-            #roc_auc_valid_macro = roc_auc_score(valid_y_true, probabilities_test, multi_class='ovr', average='macro')
-            #recall_valid_macro = recall_score(valid_y_true, predictions_test, average='macro')
-            #precision_valid_macro = precision_score(valid_y_true, predictions_test, average='macro', zero_division=0)
-            #f1_valid_macro = f1_score(valid_y_true, predictions_test, average='macro')
-
 
 
             buf_average = "Epoch {} - Loss_tr: {:.4f}, Loss_val: {:.4f},\n" \
@@ -248,13 +235,6 @@ class Model_trainer:
                   "precision_train: {:.4f}, precision_val: {:.4f},\n "\
                   "recall_train: {:.4f}, recall_val: {:.4f},\n " \
                   "aucroc_train: {:.4f}, aucroc_val: {:.4f}".format(ei, train_loss, valid_loss, f1, f1_valid, accuracy, accuracy_valid, precision, precision_valid, recall, recall_valid, roc_auc, roc_auc_valid)
-
-            #buf_macro = "Epoch {} - Loss_tr: {:.4f}, Loss_val: {:.4f},\n" \
-                  #"f1_train: {:.4f}, f1_val: {:.4f},\n " \
-                  #"acc_train: {:.4f}, acc_val: {:.4f},\n " \
-                  #"precision_train: {:.4f}, precision_val: {:.4f},\n "\
-                  #"recall_train: {:.4f}, recall_val: {:.4f},\n " \
-                  #"aucroc_train: {:.4f}, aucroc_val: {:.4f}".format(ei, train_loss, valid_loss, f1_macro, f1_valid_macro, accuracy, accuracy_valid, precision_macro, precision_valid_macro, recall_macro, recall_valid_macro, roc_auc_macro, roc_auc_valid_macro)
 
             if best_valid_roc < roc_auc_valid:
                 best_valid_roc = roc_auc_valid
@@ -285,7 +265,6 @@ class Model_trainer:
         labels = []
         outputs = []
 
-        # for bi, batch in enumerate(tqdm(loader, desc="{} batches".format(mode), leave=False)):
         for batch in loader:
             patients, inputs, targets, lengths, sorted_indice = batch
             if self.params['cuda']:
@@ -335,180 +314,6 @@ def print2file(buf, outFile):
 
 
 
-"""def main(params, class_weights):
-
-    model = Model_trainer(params, class_weights)
-    best_valid_roc, best_buf, best_precision, best_recall, best_f1 = model.train(train_p, train_X, train_Y, test_p, test_X, test_Y)
-
-    print(f'best valid auroc : {best_valid_roc}')
-    print(best_buf)
-    return best_valid_roc, best_buf, best_precision, best_recall, best_f1
-
-
-data_input_df, labels_sgd_df, patient_train, input_seqs, output_seqs, \
-        patient_test, input_seqs_test, output_seqs_test, data_idx_list, class_weights = \
-        load_dataset_classification('../processed_data/data_df_GDS.csv', '../processed_data/data_label_GDS_new2.csv',
-                                    random_state=45, test_ratio=0.20)
-
-train_p, train_X, train_Y = patient_train, input_seqs, output_seqs
-test_p, test_X, test_Y = patient_test, input_seqs_test, output_seqs_test
-
-params = {}
-params['input_dim'] = len(train_X[0][0])
-params['output_dim'] = 4
-params['lr'] = 0.001
-params['epochs'] = 100
-params['L2_norm'] = 0.0001
-params['seed'] = 45
-params['threads'] = 0
-params['cuda'] = True
-params['print'] = False
-if not torch.cuda.is_available():
-    params['cuda'] = False
-
-
-best_aucroc = 0
-best_buf = 0
-for task_num in range(1, 6):
-    params['task_num'] = task_num
-    for embd_dim in [10, 15, 20, 32]:
-        params['emb_dim']=embd_dim
-        for drpo in [0.2, 0.3, 0.4, 0.5]:
-            params['drop_out'] = drpo
-            for batch_size in [100, 128, 252]:
-                params['batch_size'] = batch_size
-                best_valid_roc, best_buf_candidate, best_precision, best_recall, best_f1 = main(params, class_weights)
-                print()
-                if best_valid_roc > best_aucroc:
-                    best_aucroc = best_valid_roc
-                    best_buf = best_buf_candidate
-print('=======================================================')
-print(best_aucroc)
-print(best_buf)
-"""
-
-
-"""
-if __name__ == "__main__":
-
-    data_input_df, labels_sgd_df, patient_train, input_seqs, output_seqs,\
-        patient_test, input_seqs_test, output_seqs_test, data_idx_list, class_weights =\
-        load_dataset_classification('../processed_data/data_df_GDS.csv', '../processed_data/data_label_GDS_new2.csv', random_state=42, test_ratio=0.20)
-
-
-    print(class_weights)
-    train_p, train_X, train_Y = patient_train, input_seqs, output_seqs
-
-    test_p, test_X, test_Y = patient_test, input_seqs_test, output_seqs_test
-
-
-
-
-    params = {}
-    params['input_dim'] = len(train_X[0][0])
-    params['output_dim'] = 4
-    params['lr'] = 0.001
-    params['batch_size'] = 100
-    params['epochs'] = 100
-    params['L2_norm'] = 0.0001
-    params['emb_dim'] = 10
-    params['drop_out'] = 0.2
-    params['seed'] = 1234
-    params['task_num'] = 3
-    params['threads'] = 0
-    params['cuda'] = True
-    params['print'] = True
-    if not torch.cuda.is_available():
-        params['cuda'] = False
-
-    model = Model_trainer(params, class_weights)
-    best_valid_roc, best_buf, best_precision, best_recall, best_f1 = model.train(train_p, train_X, train_Y, test_p, test_X, test_Y)
-    print(best_valid_roc)"""
-
-
-
-
-
-
-
-"""def main(params, class_weights, train_p, train_X, train_Y, test_p, test_X, test_Y):
-
-    model = Model_trainer(params, class_weights)
-    best_valid_roc, best_buf, best_precision, best_recall, best_f1 = model.train(train_p, train_X, train_Y, test_p, test_X, test_Y)
-
-    print(f'best valid auroc : {best_valid_roc}')
-    print(best_buf)
-    return best_valid_roc, best_buf, best_precision, best_recall, best_f1
-
-
-def func_seed(params):
-    auroc_list = []
-    f1_list = []
-    recall_list = []
-    precision_list = []
-    for seed in [123, 321, 45, 65, 52]:
-        #print(f'----------------seed: {seed}--------------')
-
-        data_input_df, labels_sgd_df, patient_train, input_seqs, output_seqs, \
-            patient_test, input_seqs_test, output_seqs_test, data_idx_list, class_weights = \
-            load_dataset_classification('../processed_data/data_df_GDS.csv',
-                                        '../processed_data/data_label_GDS_new2.csv',
-                                        random_state=seed, test_ratio=0.20)
-
-        train_p, train_X, train_Y = patient_train, input_seqs, output_seqs
-        test_p, test_X, test_Y = patient_test, input_seqs_test, output_seqs_test
-
-        params['input_dim'] = len(train_X[0][0])
-        params['seed'] = seed
-        best_valid_roc, best_buf, best_precision, best_recall, best_f1 = main(params, class_weights, train_p, train_X, train_Y, test_p, test_X, test_Y)
-        print()
-        auroc_list.append(best_valid_roc)
-        f1_list.append(best_f1)
-        recall_list.append(best_recall)
-        precision_list.append(best_precision)
-
-    print('=======================================================')
-    print(f'avg auroc: {sum(auroc_list) / len(auroc_list)}')
-    print(f'avg f1: {sum(f1_list) / len(f1_list)}')
-    print(f'avg recall: {sum(recall_list) / len(recall_list)}')
-    print(f'avg precision: {sum(precision_list) / len(precision_list)}')
-
-    return sum(auroc_list)/len(auroc_list), sum(f1_list)/len(f1_list), sum(recall_list)/len(recall_list), sum(precision_list)/len(precision_list)
-
-
-params = {}
-params['output_dim'] = 4
-params['lr'] = 0.001
-params['epochs'] = 100
-params['L2_norm'] = 0.0001
-params['threads'] = 0
-params['cuda'] = True
-params['print'] = False
-if not torch.cuda.is_available():
-    params['cuda'] = False
-
-
-best_aucroc = 0
-best_buf = 0
-for task_num in range(1, 6):
-    params['task_num'] = task_num
-    for embd_dim in [10, 15, 20, 32]:
-        params['emb_dim']=embd_dim
-        for drpo in [0.2, 0.3, 0.4, 0.5]:
-            params['drop_out'] = drpo
-            for batch_size in [100, 128, 252]:
-                params['batch_size'] = batch_size
-                print('----------------')
-                print('main params')
-                print(params)
-                print('----------------')
-                aucroc, f1, recall, precision = func_seed(params)
-                if aucroc > best_aucroc:
-                    best_aucroc = aucroc
-                    #best_buf = best_buf_candidate
-print('=======================================================')
-print(best_aucroc)
-#print(best_buf)"""
 
 def main(params, class_weights):
 
@@ -539,14 +344,14 @@ params['emb_dim']= 20
 params['drop_out'] = 0.20
 params['batch_size'] = 128
 
-
+seed_list = [52] # put as many seeds as you want to get n-fold results
 
 auroc_list = []
 f1_list=[]
 recall_list = []
 precision_list = []
 
-for seed in [123, 321, 45, 65, 52]:
+for seed in seed_list:
     print(f'----------------seed: {seed}--------------')
 
     data_input_df, labels_sgd_df, patient_train, input_seqs, output_seqs, \
